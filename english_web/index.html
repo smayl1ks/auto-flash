@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>AutoFlash — Минималистичный тренажёр английских слов</title>
+  <meta name="description"
+    content="AutoFlash — минималистичный тренажёр английских слов методом интервальных повторений (Spaced Repetition) с Obsidian-графом знаний и ИИ.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="./styles/main.css?v=2.0">
+</head>
+
+<body class="bg-dark-base text-slate-100 font-sans min-h-screen flex flex-col items-center overflow-x-hidden antialiased selection:bg-indigo-500/30 selection:text-white">
+
+  <!-- Top App Header -->
+  <header class="sticky top-0 z-40 w-full bg-dark-header backdrop-blur-xl border-b border-white/10 px-3 sm:px-6 py-2.5 flex justify-center">
+    <div class="w-full max-w-6xl flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2 font-extrabold text-white text-base sm:text-lg tracking-tight select-none">
+        <div class="w-7 h-7 rounded-md bg-indigo-500/20 border border-indigo-500/40 text-cyan-400 flex items-center justify-center text-sm shadow-sm">⚡</div>
+        <span>AutoFlash</span>
+      </div>
+
+      <!-- Desktop Nav Tabs (Hidden on mobile) -->
+      <nav class="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 p-1 rounded-full shadow-inner">
+        <button class="nav-tab active flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white transition duration-150 active:scale-95" data-tab="home">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path><circle cx="12" cy="12" r="4"></circle></svg>
+          <span>Обзор</span>
+          <span class="badge-due bg-rose-500 text-white text-[11px] font-extrabold px-1.5 py-0.2 rounded-full min-w-[18px] text-center shadow">0</span>
+        </button>
+        <button class="nav-tab flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white transition duration-150 active:scale-95" data-tab="study">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+          <span>Тренировка</span>
+        </button>
+        <button class="nav-tab flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white transition duration-150 active:scale-95" data-tab="dictionary">
+          <svg class="tab-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path><path d="M6 6h10"></path><path d="M6 10h10"></path></svg>
+          <span>Словарь</span>
+        </button>
+      </nav>
+
+      <!-- Header Right Actions: Add Word & Auth (Always visible) -->
+      <div class="flex items-center gap-2">
+        <button id="btn-open-ai-generator" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-indigo-600/30 transition duration-150 active:scale-95" title="Добавить слово">
+          <span class="text-base font-extrabold leading-none">+</span>
+          <span class="btn-ai-text">Слово</span>
+        </button>
+        <div class="flex items-center gap-1.5">
+          <button id="btn-auth-header" class="bg-white/10 hover:bg-white/15 border border-white/10 text-white font-semibold text-xs sm:text-sm px-3 py-1.5 rounded-lg transition duration-150 active:scale-95">
+            <span>Войти</span>
+          </button>
+          <button id="btn-logout-header" style="display: none;" class="bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-semibold text-xs sm:text-sm px-2.5 py-1.5 rounded-lg transition duration-150 active:scale-95" title="Выйти из аккаунта">
+            <span>Выйти</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Centered Content -->
+  <main class="w-full max-w-6xl flex-1 flex flex-col items-center p-3 sm:p-4 md:p-6 pb-24 md:pb-6 relative z-10 min-h-[calc(100dvh-60px)]">
+    
+    <!-- 1. HOME VIEW (Full Obsidian Knowledge Graph & Floating Start Block) -->
+    <section id="view-home" class="view-section active w-full">
+      <div class="w-full flex flex-col">
+        
+        <!-- Obsidian Graph Container -->
+        <div class="obsidian-graph-full-card relative w-full h-[calc(100dvh-140px)] sm:h-[560px] md:h-[calc(100vh-140px)] min-h-[380px] bg-gradient-to-b from-[#101422] to-[#08090e] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+          <div id="obsidian-graph-root" class="obsidian-graph-mount"></div>
+
+          <!-- Sleek Minimalist Start Training Floating Block (Positioned on bottom-right on desktop to avoid legend collision) -->
+          <div class="minimal-start-block absolute bottom-3 inset-x-3 md:inset-x-auto md:right-3 md:w-auto md:min-w-[380px] bg-[#0f131e]/92 backdrop-blur-xl border border-indigo-500/35 rounded-xl p-3 md:p-3.5 flex items-center justify-between gap-3 shadow-2xl z-20 transition duration-150 hover:border-indigo-500/50">
+            <div class="flex flex-col text-left">
+              <div class="text-[10px] sm:text-xs font-extrabold tracking-wider text-cyan-400 uppercase">ИНТЕРВАЛЬНЫЕ ПОВТОРЕНИЯ</div>
+              <h2 id="hero-due-title" class="text-xs sm:text-sm md:text-base font-extrabold text-white">5 карточек ждут повторения</h2>
+            </div>
+            <button id="btn-start-study-hero" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-xs sm:text-sm px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 shrink-0 transition duration-150 active:scale-95">
+              <span>Начать тренировку</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. STUDY ARENA (Flashcard Review) -->
+    <section id="view-study" class="view-section w-full">
+      <!-- Empty State for Study Arena -->
+      <div id="study-empty-wrapper" class="study-empty-wrapper flex items-center justify-center py-16 px-4" style="display: none;">
+        <div class="max-w-md w-full bg-[#131722]/90 backdrop-blur-xl border border-indigo-500/30 rounded-2xl p-8 text-center flex flex-col items-center gap-3 shadow-2xl">
+          <h3 class="text-xl font-extrabold text-white">В словаре пока нет слов</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Добавьте новые слова в словарь, чтобы начать тренировку и интервальные повторения.</p>
+          <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-lg mt-2 transition active:scale-95" id="btn-study-add-word">
+            <span>Добавить первое слово</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Flashcard Active Arena -->
+      <div class="study-wrapper max-w-xl w-full mx-auto">
+        <div class="flex items-center justify-between mb-3">
+          <div class="inline-flex items-center gap-2 bg-[#131722] border border-white/10 px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-300">
+            <span id="study-progress-counter" class="font-mono text-white">1/1</span>
+          </div>
+          <button id="btn-study-close" class="text-slate-400 hover:text-white p-1.5 text-lg rounded-lg transition" title="Завершить">✕</button>
+        </div>
+
+        <!-- Flashcard Body -->
+        <div class="study-card-body bg-[#131722] border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl mb-4 transition duration-200">
+          <div class="flex items-baseline justify-between mb-4">
+            <div class="flex flex-wrap items-baseline gap-2.5">
+              <span id="study-card-word" class="text-2xl sm:text-4xl font-black text-white tracking-tight">deal with</span>
+              <span class="card-ipa-text font-mono text-cyan-400 text-base sm:text-lg font-medium" id="study-card-transcription">/diːl wɪð/</span>
+            </div>
+          </div>
+
+          <!-- Examples List -->
+          <div class="examples-list-box flex flex-col gap-2.5 my-3" id="study-examples-list"></div>
+
+          <div class="h-px bg-white/10 my-4"></div>
+
+          <!-- Answer Section (Revealed on click) -->
+          <div class="revealed-answer-part" id="study-answer-part">
+            <div class="text-lg sm:text-xl font-bold text-white mb-3 leading-snug" id="study-card-translation">
+              Иметь дело с, заниматься, справляться с
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="badge-pill cefr" id="study-card-cefr">Уровень: B1</span>
+              <span class="badge-pill freq" id="study-card-freq">Частотность: 9/10</span>
+            </div>
+
+            <div class="text-xs sm:text-sm text-slate-400 mb-3" id="study-card-relevance">
+              Актуальность: высокая, обязательное слово для активного словаря
+            </div>
+
+            <div class="mt-2" id="study-collocations-wrapper">
+              <h5 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Коллокации:</h5>
+              <div class="flex flex-wrap gap-1.5" id="study-collocations-chips"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <button id="btn-show-answer" class="w-full h-12 sm:h-13 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition duration-150 active:scale-95">
+          <span>Показать ответ (Space)</span>
+        </button>
+
+        <div class="srs-intervals-deck grid-cols-4 gap-2 mt-2" id="srs-intervals-deck">
+          <button class="srs-button-node again" data-rating="again">
+            <span class="text-sm sm:text-base font-extrabold">1m</span>
+            <span class="text-[10px] sm:text-xs font-semibold opacity-90">Снова (1)</span>
+          </button>
+          <button class="srs-button-node hard" data-rating="hard">
+            <span class="text-sm sm:text-base font-extrabold">1d</span>
+            <span class="text-[10px] sm:text-xs font-semibold opacity-90">Трудно (2)</span>
+          </button>
+          <button class="srs-button-node good" data-rating="good">
+            <span class="text-sm sm:text-base font-extrabold">3d</span>
+            <span class="text-[10px] sm:text-xs font-semibold opacity-90">Хорошо (3)</span>
+          </button>
+          <button class="srs-button-node easy" data-rating="easy">
+            <span class="text-sm sm:text-base font-extrabold">6d</span>
+            <span class="text-[10px] sm:text-xs font-semibold opacity-90">Легко (4)</span>
+          </button>
+        </div>
+
+        <div class="hidden sm:block text-center text-xs text-slate-500 mt-3">
+          [Пробел] — Показать ответ • [1, 2, 3, 4] — Интервал повторения
+        </div>
+      </div>
+
+      <!-- Completion Screen Widget -->
+      <div class="study-complete-wrapper max-w-md w-full mx-auto" id="study-complete-wrapper" style="display: none;">
+        <div class="bg-[#131722] border border-white/10 rounded-2xl p-6 sm:p-8 text-center shadow-2xl w-full">
+          <h2 class="text-2xl font-black text-white mb-1">Сессия завершена</h2>
+          <p class="text-xs sm:text-sm text-slate-400 mb-6">Все запланированные карточки успешно пройдены.</p>
+
+          <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="bg-white/5 border border-white/5 rounded-xl p-3.5 flex flex-col items-center">
+              <span class="text-[11px] font-semibold text-slate-400">Повторено в сессии</span>
+              <span class="text-xl sm:text-2xl font-black font-mono text-white mt-1" id="complete-reviewed-count">0</span>
+            </div>
+            <div class="bg-white/5 border border-white/5 rounded-xl p-3.5 flex flex-col items-center">
+              <span class="text-[11px] font-semibold text-slate-400">Ждут повторения</span>
+              <span class="text-xl sm:text-2xl font-black font-mono text-emerald-400 mt-1" id="complete-remaining-count">0</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2.5 w-full">
+            <button id="btn-complete-home" class="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-95">
+              <span>← В обзор</span>
+            </button>
+            <button id="btn-complete-restart" class="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition active:scale-95">
+              <span>🔄 Повторить ещё раз</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. COMPACT DICTIONARY LIST VIEW (Optimized for 500+ Words) -->
+    <section id="view-dictionary" class="view-section w-full">
+      <div class="flex items-center gap-3 mb-3">
+        <input type="text" id="dict-search-input" class="w-full px-4 py-2.5 bg-dark-input border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition" placeholder="Поиск слова или перевода...">
+        <div class="text-xs font-bold text-slate-400 whitespace-nowrap px-3 py-2 bg-white/5 rounded-xl border border-white/5" id="dict-total-count">0 слов</div>
+      </div>
+
+      <!-- Compact List Table -->
+      <div class="bg-[#131722] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="hidden md:flex items-center px-4 py-2.5 bg-black/20 border-b border-white/10 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <span class="w-48">Слово</span>
+          <span class="flex-1">Перевод</span>
+          <span class="w-24 text-right">Интервал</span>
+        </div>
+        <div id="dict-list-body" class="flex flex-col max-h-[65vh] overflow-y-auto divide-y divide-white/5">
+          <!-- Compact rows injected via JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- AI Generator Modal (Single & Batch Mode) -->
+  <div class="modal-backdrop fixed inset-0 z-[9999] items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md" id="modal-ai">
+    <div class="modal-inner-card bg-[#141824] border border-indigo-500/30 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl max-h-[88dvh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></div>
+          <h3 id="ai-modal-heading" class="text-base sm:text-lg font-extrabold text-white">
+            Добавить слова
+          </h3>
+        </div>
+        <button class="text-slate-400 hover:text-white text-lg p-1" id="btn-close-ai">✕</button>
+      </div>
+
+      <!-- Step 1: Input Word(s) -->
+      <div id="ai-step-input">
+        <p class="text-xs text-slate-400 mb-3 leading-relaxed">
+          Введите слова или фразы. Добавляйте их по одному кнопкой <b class="text-indigo-400">+</b> (или клавишей <kbd class="px-1 py-0.5 bg-white/10 rounded font-mono text-[10px]">Enter</kbd>), либо вставьте список через запятую. ИИ сгенерирует всю пачку за <b>1 быстрый запрос</b>, экономя токены.
+        </p>
+
+        <!-- Dynamic Words List (Chips) -->
+        <div id="ai-batch-tags-container" class="flex flex-wrap gap-1.5 mb-3 p-2.5 bg-black/40 border border-indigo-500/20 rounded-xl" style="display: none;">
+          <!-- Word chips inserted dynamically -->
+        </div>
+
+        <!-- Input Row with + Add Button -->
+        <div class="flex items-center gap-2 mb-4">
+          <input type="text" id="ai-input-word" class="flex-1 px-4 py-3 bg-dark-input border border-white/15 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:border-indigo-500 transition"
+            placeholder="Слово или через запятую: resilient, deal with..." autofocus>
+          <button type="button" id="btn-add-word-chip" class="h-12 px-4 bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-300 hover:text-white font-extrabold text-xl rounded-xl transition flex items-center justify-center shrink-0 active:scale-95" title="Добавить слово в список">+</button>
+        </div>
+
+        <button id="btn-submit-ai-gen" class="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-95">
+          <span id="btn-submit-ai-text">Сгенерировать карточку</span>
+        </button>
+      </div>
+
+      <!-- Step 2: Card Preview & Refinement (Single & Batch) -->
+      <div id="ai-step-preview" style="display: none;">
+        
+        <!-- Batch selector tabs (visible when multiple cards generated) -->
+        <div id="ai-batch-tabs" class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 max-w-full" style="display: none;">
+          <!-- Injected dynamically: [1. resilient] [2. deal with] ... -->
+        </div>
+
+        <div class="bg-black/30 border border-indigo-500/20 rounded-xl p-4 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-baseline gap-2">
+              <span id="preview-word" class="text-lg font-black text-white">resilient</span>
+              <span id="preview-transcription" class="font-mono text-slate-400 text-xs">/rɪˈzɪliənt/</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span id="preview-card-counter" class="text-[11px] font-mono font-bold text-indigo-300 px-2 py-0.5 bg-indigo-500/15 border border-indigo-500/30 rounded" style="display: none;">1/3</span>
+              <span id="preview-cefr" class="badge-pill cefr">B2</span>
+            </div>
+          </div>
+
+          <div id="preview-translation" class="text-sm font-semibold text-slate-200 mb-1">Стойкий, жизнестойкий</div>
+          <div id="preview-definition" class="text-xs text-slate-400 italic mb-3">able to quickly return to a good condition</div>
+
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Примеры:</div>
+          <div id="preview-examples-list" class="flex flex-col gap-1.5 mb-3"></div>
+
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Коллокации:</div>
+          <div id="preview-collocations-list" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Refinement input (collapsible) -->
+        <div id="ai-refine-box" class="mb-3" style="display: none;">
+          <input type="text" id="ai-input-feedback" class="w-full px-3.5 py-2.5 bg-dark-input border border-white/15 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 mb-2"
+            placeholder="Что изменить? например: сделай более деловые примеры...">
+          <button id="btn-submit-ai-refine" class="w-full h-10 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl transition">
+            <span>Перегенерировать текущую карточку</span>
+          </button>
+        </div>
+
+        <!-- Preview Action Buttons -->
+        <div class="flex gap-2 mt-3" id="preview-actions-bar">
+          <button id="btn-ai-refine-toggle" class="flex-1 h-11 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-bold text-xs sm:text-sm rounded-xl transition">
+            <span>На доработку</span>
+          </button>
+          <button id="btn-ai-accept-card" class="flex-[1.4] h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition active:scale-95">
+            <span id="btn-accept-text">Принять и сохранить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentication Modal (Clean Centered Dialog) -->
+  <div class="modal-backdrop fixed inset-0 z-[9999] items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md" id="modal-auth">
+    <div class="modal-inner-card bg-[#141824] border border-indigo-500/30 rounded-2xl w-full max-w-md p-5 sm:p-7 shadow-2xl max-h-[88dvh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="auth-modal-title" class="text-base sm:text-lg font-extrabold text-white">
+          Вход в AutoFlash
+        </h3>
+        <button class="text-slate-400 hover:text-white text-xl p-1 leading-none rounded-lg hover:bg-white/10 transition" id="btn-close-auth" title="Закрыть">✕</button>
+      </div>
+
+      <!-- Quick 1-Click Demo Login -->
+      <button type="button" id="btn-quick-demo-login" class="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 mb-3 transition duration-150 active:scale-95">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>⚡ Войти в 1 клик (Демо-аккаунт)</span>
+      </button>
+
+      <div class="relative flex py-1 items-center mb-3">
+        <div class="flex-grow border-t border-white/10"></div>
+        <span class="flex-shrink mx-3 text-slate-500 text-xs font-semibold">или введите логин</span>
+        <div class="flex-grow border-t border-white/10"></div>
+      </div>
+
+      <div class="flex gap-1 bg-white/5 border border-white/10 p-1 rounded-xl mb-4">
+        <button type="button" class="auth-tab-btn active flex-1 py-2 rounded-lg text-xs font-bold text-slate-300 transition" id="auth-tab-login">Вход</button>
+        <button type="button" class="auth-tab-btn flex-1 py-2 rounded-lg text-xs font-bold text-slate-300 transition" id="auth-tab-register">Регистрация</button>
+      </div>
+
+      <form id="auth-form" onsubmit="return false;" class="flex flex-col gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Email или логин</label>
+          <input type="text" id="auth-input-email" class="w-full px-4 py-2.5 bg-dark-input border border-white/15 rounded-xl text-white text-base focus:outline-none focus:border-indigo-500 transition" placeholder="demo" required autocomplete="username">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">Пароль</label>
+          <input type="password" id="auth-input-password" class="w-full px-4 py-2.5 bg-dark-input border border-white/15 rounded-xl text-white text-base focus:outline-none focus:border-indigo-500 transition" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="btn-submit-auth" class="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm sm:text-base rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 mt-1 transition duration-150 active:scale-95">
+          <span>Войти</span>
+        </button>
+      </form>
+
+      <!-- Demo Accounts Helper -->
+      <div class="mt-4 p-3 bg-white/5 border border-white/10 rounded-xl text-left">
+        <div class="text-[11px] font-bold text-slate-400 mb-1.5 flex items-center justify-between">
+          <span>💡 Готовые тестовые аккаунты:</span>
+          <span class="text-emerald-400 font-mono text-[10px]">пароль: password123</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" class="demo-user-chip px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded-lg text-xs font-mono transition" data-user="demo">demo</button>
+          <button type="button" class="demo-user-chip px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded-lg text-xs font-mono transition" data-user="alex">alex</button>
+          <button type="button" class="demo-user-chip px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded-lg text-xs font-mono transition" data-user="smayl1ks">smayl1ks</button>
+          <button type="button" class="demo-user-chip px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 rounded-lg text-xs font-mono transition" data-user="tonitaga">tonitaga</button>
+        </div>
+      </div>
+
+      <!-- Continue as Guest -->
+      <button type="button" id="btn-continue-guest" class="w-full py-2.5 mt-2 text-center text-xs text-slate-400 hover:text-indigo-300 transition font-medium">
+        Продолжить без авторизации (Гостевой режим) →
+      </button>
+    </div>
+  </div>
+
+  <!-- Dedicated Mobile Bottom Navigation Bar (Hidden on Desktop) -->
+  <nav class="mobile-bottom-nav fixed bottom-0 inset-x-0 md:hidden h-14 bg-[#0c0f16]/95 backdrop-blur-2xl border-t border-white/10 flex justify-around items-center z-40 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.7)]">
+    <button class="nav-tab active flex-1 flex flex-col items-center justify-center gap-0.5 py-1 text-slate-400 hover:text-white transition relative" data-tab="home">
+      <svg class="tab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path><circle cx="12" cy="12" r="4"></circle></svg>
+      <span class="text-[11px] font-semibold">Обзор</span>
+      <span class="badge-due absolute top-0.5 right-[calc(50%-18px)] bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow">0</span>
+    </button>
+    <button class="nav-tab flex-1 flex flex-col items-center justify-center gap-0.5 py-1 text-slate-400 hover:text-white transition relative" data-tab="study">
+      <svg class="tab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+      <span class="text-[11px] font-semibold">Тренировка</span>
+    </button>
+    <button class="nav-tab flex-1 flex flex-col items-center justify-center gap-0.5 py-1 text-slate-400 hover:text-white transition relative" data-tab="dictionary">
+      <svg class="tab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path><path d="M6 6h10"></path><path d="M6 10h10"></path></svg>
+      <span class="text-[11px] font-semibold">Словарь</span>
+    </button>
+  </nav>
+
+  <!-- Global Fullscreen Confetti Canvas -->
+  <canvas id="study-confetti-canvas" class="confetti-canvas pointer-events-none fixed inset-0 w-screen h-screen z-[9999]" style="display: none;"></canvas>
+
+  <script type="module" src="./src/app.js?v=2.0"></script>
+</body>
+
+</html>

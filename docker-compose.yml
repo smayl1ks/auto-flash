@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      context: ./english_backend
+      dockerfile: Dockerfile
+    container_name: autoflash_backend
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./english_backend:/app
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - autoflash_net
+
+  nginx:
+    image: nginx:alpine
+    container_name: autoflash_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./english_web:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - autoflash_net
+
+networks:
+  autoflash_net:
+    driver: bridge

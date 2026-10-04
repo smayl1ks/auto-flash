@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: autoflash_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./lexicards.db:/app/lexicards.db
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
